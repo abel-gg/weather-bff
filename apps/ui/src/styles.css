@@ -1,0 +1,447 @@
+/*
+ * Plain CSS with custom properties. At this size a utility framework or a
+ * CSS-in-JS runtime would be more setup and more bundle than the problem
+ * deserves — and every token here is one a design system would own in a real
+ * product, so replacing this file is the only migration cost.
+ */
+
+:root {
+  --bg: #eef2f8;
+  --surface: #ffffff;
+  --surface-muted: #f4f6fb;
+  --text: #131a26;
+  --text-muted: #5b6779;
+  --border: #dde3ee;
+  --accent: #2b5fd9;
+  --accent-contrast: #ffffff;
+  --danger: #b3261e;
+  --danger-surface: #fdeceb;
+  --warning-surface: #fff5e0;
+  --warning-border: #f0c471;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 8px 24px rgb(16 24 40 / 6%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --surface: #161b25;
+    --surface-muted: #1d2430;
+    --text: #e8edf5;
+    --text-muted: #9aa6b8;
+    --border: #29313f;
+    --accent: #6d94ff;
+    --accent-contrast: #0d1117;
+    --danger: #ff9c94;
+    --danger-surface: #37201e;
+    --warning-surface: #2f2718;
+    --warning-border: #6b5527;
+    --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 30%);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  /* Symmetric top and bottom. The extra bottom padding this used to carry was
+     buying nothing, and was enough on a page that otherwise fits to tip it into
+     scrolling. */
+  padding: 2.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.app__title {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.app__subtitle,
+.app__footer {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.app__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.app__footer p {
+  margin: 0;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+}
+
+.section-title {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* --- Search ------------------------------------------------------------ */
+
+.search {
+  display: block;
+}
+
+.search__row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.search__input {
+  flex: 1 1 16rem;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.search__input:focus-visible,
+.button:focus-visible,
+.search__option button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.button {
+  padding: 0.75rem 1.1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.button--ghost {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.link {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.search__results {
+  position: relative;
+}
+
+.search__message {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.search__message--error {
+  color: var(--danger);
+}
+
+.search__list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.search__list:not(:empty) {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+/*
+ * The results list is always in the DOM, so when it has nothing to show it must
+ * occupy nothing. Styling only its border for the empty case still left the
+ * margin behind: a permanent strip of dead space under the search box, pushing
+ * the whole page down and putting a scrollbar on a page that fits.
+ */
+.search__list:empty {
+  display: none;
+}
+
+.search__option button {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.search__option.is-active button,
+.search__option button:hover {
+  background: var(--surface-muted);
+}
+
+/* --- States ------------------------------------------------------------ */
+
+.state {
+  text-align: center;
+}
+
+.state__icon {
+  font-size: 2.25rem;
+}
+
+.state__title {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 1.15rem;
+}
+
+.state__description {
+  margin: 0 auto 1rem;
+  max-width: 34ch;
+  color: var(--text-muted);
+}
+
+.state--error {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: var(--danger-surface);
+}
+
+.state__meta {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.state__meta code {
+  font-size: 0.78rem;
+}
+
+.stale-notice {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.88rem;
+  background: var(--warning-surface);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius);
+}
+
+/* --- Skeleton ---------------------------------------------------------- */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-muted) 25%,
+    color-mix(in srgb, var(--surface-muted) 60%, var(--border)) 37%,
+    var(--surface-muted) 63%
+  );
+  background-size: 400% 100%;
+  border-radius: 8px;
+  animation: shimmer 1.4s ease infinite;
+}
+
+.skeleton--headline {
+  width: 45%;
+  height: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.skeleton--temperature {
+  width: 8rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
+}
+
+.skeleton--line {
+  width: 100%;
+  height: 3.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.skeleton--day {
+  height: 6.5rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* Respect a stated preference for less motion; the shimmer is decoration. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* --- Current conditions ------------------------------------------------ */
+
+.current__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.current__place {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.current__timezone,
+.current__footnote {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.current__refreshing {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.current__reading {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+
+.current__icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.current__temperature {
+  margin: 0.25rem 0 0;
+  font-size: 3.5rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+.current__unit {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  vertical-align: super;
+}
+
+.current__condition {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.metric {
+  padding: 0.75rem;
+  background: var(--surface-muted);
+  border-radius: 10px;
+}
+
+.metric__label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.metric__value {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/* --- Forecast ---------------------------------------------------------- */
+
+.forecast {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.forecast__day {
+  padding: 0.75rem 0.35rem;
+  background: var(--surface-muted);
+  border-radius: 10px;
+}
+
+.forecast__name {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.forecast__icon {
+  font-size: 1.4rem;
+}
+
+.forecast__temps {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+}
+
+.forecast__min {
+  color: var(--text-muted);
+}
+
+.forecast__rain {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
