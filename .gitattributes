@@ -1,0 +1,10 @@
+# Normalise line endings so the repository is identical regardless of the OS it
+# was committed from. Without this, a Windows checkout can commit CRLF into
+# files that Linux tooling (containers, CI shells) expects to be LF.
+* text=auto eol=lf
+
+# Binary-ish files git should never try to normalise.
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

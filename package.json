@@ -1,0 +1,42 @@
+{
+  "name": "weather-bff",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cache-first weather application: React SPA served by a Fastify backend-for-frontend.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11",
+    "npm": ">=10"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,ui -c cyan,magenta \"npm:dev:api\" \"npm:dev:ui\"",
+    "dev:api": "npm run dev --workspace @weather/api",
+    "dev:ui": "npm run dev --workspace @weather/ui",
+    "demo:down": "node scripts/demo.mjs down",
+    "demo:slow": "node scripts/demo.mjs slow",
+    "demo:stale": "node scripts/demo.mjs stale",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5",
+    "jsdom": "^27.4.0",
+    "typescript": "^5.9.3"
+  },
+  "optionalDependencies": {
+    "@esbuild/darwin-arm64": "^0.28.2",
+    "@esbuild/darwin-x64": "^0.28.2",
+    "@esbuild/linux-arm64": "^0.28.2",
+    "@esbuild/linux-x64": "^0.28.2",
+    "@esbuild/win32-x64": "^0.28.2",
+    "@rollup/rollup-darwin-arm64": "^4.62.4",
+    "@rollup/rollup-darwin-x64": "^4.62.4",
+    "@rollup/rollup-linux-arm64-gnu": "^4.62.4",
+    "@rollup/rollup-linux-x64-gnu": "^4.62.4",
+    "@rollup/rollup-win32-x64-msvc": "^4.62.4"
+  }
+}
