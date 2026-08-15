@@ -1,0 +1,42 @@
+# One command to run the whole thing: docker compose up --build
+#
+# The topology mirrors production: nginx terminates the browser connection,
+# serves the static bundle and proxies /api to the BFF on an internal network.
+# The API port is not published — nothing outside the compose network can reach
+# it directly, exactly as it would sit behind an ingress.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      PORT: 3001
+      HOST: 0.0.0.0
+      LOG_LEVEL: info
+      # nginx proxies same-origin, so this only matters for direct access.
+      CORS_ORIGIN: http://localhost:8080
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: apps/ui/Dockerfile
+    ports:
+      - '8080:80'
+    depends_on:
+      # Wait for healthy, not just started: nginx resolves the `api` hostname at
+      # startup and will refuse to boot if the upstream name does not exist yet.
+      api:
+        condition: service_healthy
+    restart: unless-stopped

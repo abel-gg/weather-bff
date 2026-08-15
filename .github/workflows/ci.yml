@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push makes the previous run's answer irrelevant. Cancelling it frees the
+# runner and shortens the queue for everyone.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      # `npm ci` and not `npm install`: it installs exactly the lockfile and
+      # fails if package.json and the lock have drifted. A build that quietly
+      # resolves a different dependency tree than the developer had is not a
+      # build, it is a coin toss.
+      - run: npm ci
+
+      # Ordered cheapest-to-slowest so the fastest signal fails first.
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  images:
+    name: Container images
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Built on every PR but pushed on none. The point is to find a broken
+      # Dockerfile at review time rather than during a release.
+      - name: Build the API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: weather-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build the UI image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/ui/Dockerfile
+          push: false
+          tags: weather-ui:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  topology:
+    name: Compose topology smoke test
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Building the images proves they compile. This proves they actually
+      # serve traffic: nginx in front, the BFF behind it, the healthcheck
+      # gating startup, and the two talking to each other over the compose
+      # network. That wiring is not covered by any unit or integration test,
+      # and it is exactly the part that only fails once it is deployed.
+      - name: Start the full stack
+        run: docker compose up -d --build --wait
+
+      - name: Wait for nginx to accept connections
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -sf http://localhost:8080/ >/dev/null; then
+              echo "up after ${attempt} attempt(s)"; exit 0
+            fi
+            sleep 2
+          done
+          echo "nginx never answered"; exit 1
+
+      - name: The SPA is served
+        run: curl -sf http://localhost:8080/ | grep -q 'id="root"'
+
+      - name: nginx proxies /api through to the BFF
+        # Deliberately an endpoint that makes no upstream call. This asserts the
+        # proxy wiring and the shared error envelope without depending on a
+        # third party being reachable from a CI runner.
+        run: |
+          status=$(curl -s -o /tmp/body.json -w '%{http_code}' http://localhost:8080/api/nope)
+          cat /tmp/body.json
+          test "$status" = "404"
+          grep -q '"code":"NOT_FOUND"' /tmp/body.json
+          grep -q '"requestId"' /tmp/body.json
+
+      - name: The weather endpoint answers in our envelope
+        # Tolerant by design: a typed upstream error is still correct wiring.
+        # Asserting on a live temperature would make this job fail whenever
+        # Open-Meteo has a bad day, which is someone else's incident, not a
+        # regression in this repository.
+        run: |
+          curl -s "http://localhost:8080/api/weather?latitude=36.72&longitude=-4.42" -o /tmp/weather.json
+          head -c 300 /tmp/weather.json; echo
+          grep -qE '"temperatureC"|"code":"UPSTREAM_' /tmp/weather.json
+
+      - name: Show container logs when something failed
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
